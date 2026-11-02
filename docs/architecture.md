@@ -1,0 +1,15 @@
+# Architecture decisions and data model
+
+Status: first local development milestone. No production deployment authorized.
+
+Use a modular monolith: Next.js App Router UI, NestJS REST API, PostgreSQL 17, Drizzle for typed queries and reviewed SQL for constraints. Node 24 satisfies current official Next/Nest minimums. Stable package versions are exact in package.json and package-lock.json. Official installation sources checked: github.com/vercel/next.js (docs/01-app/01-getting-started/01-installation.mdx); github.com/nestjs/docs.nestjs.com (content/first-steps.md). Reference manual at the supplied Windows path is inaccessible; page mappings are user-supplied, not independently read.
+
+Identity: bcrypt password hashing and maintained express-session with PostgreSQL session storage, HttpOnly SameSite cookies, explicit allowed Origin for mutations, session regeneration, logout revocation, login rate limiting. User -> membership -> tenant/company. Every financial transaction sets authenticated user, tenant and company context transaction-locally. Runtime role has no ownership, superuser or BYPASSRLS privileges. Financial tables FORCE RLS with both scope and membership checks. Never accept tenant IDs from clients. Local signup creates a new independent tenant/company with a main branch, fiscal period, accounts and demo tax configuration. Runtime cannot modify memberships directly.
+
+Schema: users, sessions, tenants, memberships, companies, branches, periods, accounts, tax_rules, parties, documents, payments, journals, journal_lines, audit_events, outbox, requests. Composite (tenant_id, company_id, id) keys prevent foreign links across companies. Document snapshots capture counterparty and tax treatment. Source documents/payments, postings, audit and outbox events commit together. Immutable posted financial tables; corrections are linked reversal entries (manual journals only initially). Source-document corrections require a later credit-note workflow.
+
+Money is NUMERIC(20,2), API decimal strings, decimal.js precision 40 and explicit HALF_UP rounding. MVP PHP only; no float arithmetic. Dates are ISO business dates with Asia/Manila defaults; event timestamps UTC. Sample tax treatments are unverified and development-only. No filing or compliant invoice issuance claims.
+
+Domain boundaries reserved: identity/access; company configuration; ledger; sales/receivables; purchasing/payables; banking; inventory/costing; fixed assets; projects; payroll; approvals; statutory reporting; commercial subscriptions; integrations. Future entities: item/warehouse/movement/cost layer, asset/depreciation schedule, employee/payroll run/earnings/contribution, approval policy/request/decision, attachment/object grant, import batch/staged row/mapping, subscription/entitlement, integration/delivery, versioned statutory configuration. Add normalized tables per domain, not generic JSON transaction models.
+
+An outbox is persisted now; delivery workers and S3 attachments are later capabilities, not fake integrations. Redis is provisioned but no financial state relies on it. No live messaging, real books, payroll, payments or government submissions.

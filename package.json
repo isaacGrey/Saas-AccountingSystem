@@ -1,0 +1,58 @@
+{
+  "name": "tala-accounting",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.15 <25"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run build:api && node --env-file=.env dist/api/main.js",
+    "dev:web": "next dev apps/web --hostname 0.0.0.0",
+    "build:api": "tsc -p apps/api/tsconfig.json",
+    "build:web": "next build apps/web",
+    "build": "npm run build:api && npm run build:web",
+    "db:migrate": "node --env-file=.env --import tsx scripts/migrate.ts",
+    "test": "node --env-file=.env --import tsx --test tests/*.test.ts",
+    "test:browser": "playwright test",
+    "typecheck": "npm run build:api && tsc --noEmit -p apps/web/tsconfig.json",
+    "services": "docker compose up -d --wait",
+    "setup": "node scripts/setup.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.3.2",
+    "@nestjs/core": "12.3.2",
+    "@nestjs/platform-express": "12.3.2",
+    "@nestjs/swagger": "12.1.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "bcryptjs": "3.0.3",
+    "connect-pg-simple": "10.0.0",
+    "decimal.js": "10.6.0",
+    "drizzle-orm": "0.45.4",
+    "express-rate-limit": "8.7.3",
+    "express-session": "1.19.0",
+    "helmet": "8.3.0",
+    "next": "16.4.4",
+    "pg": "8.23.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "tailwindcss": "4.3.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/connect-pg-simple": "7.0.3",
+    "@types/express": "5.0.6",
+    "@types/express-session": "1.19.0",
+    "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "concurrently": "10.0.6",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  },
+  "type": "module"
+}

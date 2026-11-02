@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, FormEvent } from "react";
 import Decimal from "decimal.js";
+import { CompanyAccess } from "./company-access";
 type Row = Record<string, any>;
 const php = (v: string | number) =>
   "₱" + new Decimal(v || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -79,10 +80,14 @@ export default function Home() {
   async function refresh(id = company) {
     const result = await api("me");
     setMe(result);
-    const c = id || result.companies[0]?.id;
+    const c = result.companies.some((x: Row) => x.id === id)
+      ? id
+      : result.companies[0]?.id;
     if (c) {
+      const workspace = await api(`companies/${c}/workspace`);
       setCompany(c);
-      setData(await api(`companies/${c}/workspace`));
+      localStorage.setItem(`tala-company-${result.user.id}`, c);
+      setData(workspace);
       const item = result.companies.find((x: Row) => x.id === c);
       setTheme(item.theme);
     }
@@ -91,11 +96,14 @@ export default function Home() {
     api("me")
       .then(async (result) => {
         setMe(result);
-        const c = result.companies[0]?.id;
+        const saved = localStorage.getItem(`tala-company-${result.user.id}`);
+        const c =
+          result.companies.find((x: Row) => x.id === saved)?.id ||
+          result.companies[0]?.id;
         if (c) {
           setCompany(c);
           setData(await api(`companies/${c}/workspace`));
-          setTheme(result.companies[0].theme);
+          setTheme(result.companies.find((x: Row) => x.id === c).theme);
         }
       })
       .catch((e) => {
@@ -372,6 +380,27 @@ export default function Home() {
             {nav.find((n) => n[0] === view)?.[2]}
           </div>
           <div className="header-right">
+            <select
+              aria-label="Active company"
+              className="company-picker"
+              value={company}
+              disabled={busy || !!modal}
+              onChange={(e) => {
+                const id = e.target.value;
+                action(async () => {
+                  setData(null);
+                  await refresh(id);
+                  setView("overview");
+                  setSearch("");
+                });
+              }}
+            >
+              {me.companies.map((c: Row) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} · {c.role}
+                </option>
+              ))}
+            </select>
             <span className="live-dot" /> Local development{" "}
             <span className="avatar small">{me.user.name.slice(0, 1)}</span>
           </div>
@@ -837,6 +866,20 @@ export default function Home() {
               )}
               {view === "settings" && (
                 <div className="settings-grid">
+                  {current?.role === "owner" && (
+                    <CompanyAccess
+                      key={company}
+                      company={company}
+                      userId={me.user.id}
+                      onCreated={async (id) => {
+                        await refresh(id);
+                        setView("overview");
+                        setNotice(
+                          "Separate company created. Its books are empty.",
+                        );
+                      }}
+                    />
+                  )}
                   <section className="panel settings">
                     <h2>Appearance</h2>
                     <p className="muted">

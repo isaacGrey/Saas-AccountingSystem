@@ -1076,6 +1076,44 @@ tfoot {
   }
 }
 /* Contain offscreen table labels inside their horizontally scrolling table. */
-.table-scroll { position: relative; max-width: 100%; }
-.main-shell, .panel { min-width: 0; }
-.sidebar-bottom small { overflow-wrap: anywhere; }
+.table-scroll {
+  position: relative;
+  max-width: 100%;
+}
+.main-shell,
+.panel {
+  min-width: 0;
+}
+.sidebar-bottom small {
+  overflow-wrap: anywhere;
+}
+.company-picker {
+  width: min(280px, 30vw);
+  margin: 0 18px 0 0;
+  padding: 6px;
+  font-size: 12px;
+}
+.company-access {
+  grid-column: 1 / -1;
+}
+.company-access form {
+  max-width: 550px;
+  margin-top: 25px;
+}
+.company-access hr {
+  margin: 28px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 560px) {
+  .company-picker {
+    width: 145px;
+    max-width: 38vw;
+    margin-right: 7px;
+    font-size: 11px;
+  }
+  .breadcrumb,
+  .separator {
+    display: none;
+  }
+}

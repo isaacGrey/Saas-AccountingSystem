@@ -49,3 +49,17 @@ Browser tests use installed Chromium at /usr/bin/chromium; set CHROMIUM_PATH for
 - docs: product requirements, architecture, feature traceability, compliance gaps, payroll, migration, design, operations and implementation handoff.
 
 See [implementation status](docs/implementation-status.md), [test evidence](docs/test-evidence.md), and [compliance register](docs/compliance-matrix.md) before expanding scope. The supplied reference PDF remains unavailable. No live integrations, government submissions, production deployment or real accounting migration have occurred.
+
+## Update an existing Windows installation
+
+Stop the running app with Ctrl+C, then run these from your project folder:
+
+```powershell
+git pull --ff-only origin codex/accounting-foundation
+npm.cmd ci
+npm.cmd run services
+npm.cmd run db:migrate
+npm.cmd run dev
+```
+
+Keep your existing `.env` and Docker volumes. The new Company access section in Settings supports creating separate companies and managing registered users. Use the header selector to switch companies. See [company access](docs/company-access.md) for permissions and limits.

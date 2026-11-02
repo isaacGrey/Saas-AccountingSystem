@@ -1,6 +1,10 @@
 # Implementation status and continuation guide
 
-## Current milestone
+## Latest increment: company access
+
+Implemented owner-only member listing and role grants/changes/revocation for registered users, additive legal-company creation within the same tenant, and an explicit company switcher with persisted selection. Creation copies configuration but no transactions or other memberships. See company-access.md. Email invitations, MFA/recovery, branch administration and granular roles remain pending.
+
+## Original foundation milestone
 
 Local development vertical slice, not a complete commercial product. Original full requirements remain in product-requirements.md. No production deployment, live messages, payments, books or government filings have been performed.
 
@@ -25,4 +29,4 @@ Read README, architecture, posting-rules, test-evidence and this document. Run s
 
 ## Known limitations
 
-Only PHP, one initial branch and current-year calendar fiscal period per signup. Owner/accountant/auditor permissions exist but no admin UI. Server sessions lack MFA/recovery; suitable only for this local milestone. Auth tables are not exposed by APIs. Company settings require write permission. Reports are all-time, not statutory financial statements. Document, journal and audit lists show 100 latest rows; accounting totals and reconciliation cover all rows. Basic two-line manual journal UI; API supports up to 100 lines. Source reversals require a future correction workflow. Close is one-way for now. Outbox has no delivery worker. API OpenAPI request schemas are explicit for documents/payments; auth, journal and settings schemas need fuller OpenAPI descriptions. Themes support company presets/mode; full custom colours, import/export, logos, personal overrides and contrast validation are pending. No performance, restore, accessibility-certification or production-security claims.
+Only PHP, one initial branch and calendar fiscal period per new company. Owner/accountant/auditor permissions now have a company-owner administration UI. Server sessions lack MFA/recovery; suitable only for this local milestone. Auth tables are not exposed by APIs. Company settings require write permission. Reports are all-time, not statutory financial statements. Document, journal and audit lists show 100 latest rows; accounting totals and reconciliation cover all rows. Basic two-line manual journal UI; API supports up to 100 lines. Source reversals require a future correction workflow. Close is one-way for now. Outbox has no delivery worker. API OpenAPI request schemas are explicit for documents/payments; auth, journal and settings schemas need fuller OpenAPI descriptions. Themes support company presets/mode; full custom colours, import/export, logos, personal overrides and contrast validation are pending. No performance, restore, accessibility-certification or production-security claims.

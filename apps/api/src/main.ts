@@ -61,23 +61,23 @@ class Errors implements ExceptionFilter {
   catch(error: any, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse();
     if (error instanceof z.ZodError)
-      return res
-        .status(400)
-        .json({
-          message: error.issues
-            .map((i) => `${i.path.join(".")}: ${i.message}`)
-            .join("; "),
-        });
+      return res.status(400).json({
+        message: error.issues
+          .map((i) => `${i.path.join(".")}: ${i.message}`)
+          .join("; "),
+      });
     if (error instanceof HttpException)
       return res.status(error.getStatus()).json({ message: error.message });
     if (error.code === "23505")
       return res.status(409).json({ message: "This record already exists" });
-    if (["23514", "23503", "P0001", "42501", "22003"].includes(error.code))
+    if (error.code === "42501")
       return res
-        .status(400)
-        .json({
-          message: "The operation violates an accounting or access control",
-        });
+        .status(403)
+        .json({ message: "Company owner permission required" });
+    if (["23514", "23503", "P0001", "42501", "22003"].includes(error.code))
+      return res.status(400).json({
+        message: "The operation violates an accounting or access control",
+      });
     console.error("Request failed:", error.code || error.name);
     return res
       .status(500)
@@ -182,6 +182,77 @@ class AppController {
       );
       return { user: profile.rows[0], companies: companies.rows };
     });
+  }
+  @Get("companies/:company/members") members(
+    @Req() req: Request,
+    @Param("company") company: string,
+  ) {
+    return scoped(
+      user(req),
+      companyId(company),
+      false,
+      async (db) =>
+        (await db.query("SELECT * FROM company_members($1)", [company])).rows,
+    );
+  }
+  @Post("companies/:company/members") member(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Body() body: unknown,
+  ) {
+    const input = z
+      .object({
+        email: z.email().max(200),
+        role: z.enum(["owner", "accountant", "auditor", "remove"]),
+      })
+      .strict()
+      .parse(body);
+    return scoped(user(req), companyId(company), true, async (db, tenant) => {
+      const target = (
+        await db.query("SELECT set_company_member($1,$2,$3) id", [
+          company,
+          input.email,
+          input.role,
+        ])
+      ).rows[0].id;
+      await audit(
+        db,
+        { user: user(req), tenant, company },
+        input.role === "remove" ? "membership.revoked" : "membership.updated",
+        target,
+        { role: input.role },
+      );
+      return { id: target, role: input.role };
+    });
+  }
+  @Post("companies/:company/companies") addCompany(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Headers("idempotency-key") key: string,
+    @Body() body: unknown,
+  ) {
+    const input = z
+      .object({ name: z.string().trim().min(2).max(160), date })
+      .strict()
+      .parse(body);
+    return this.command(
+      req,
+      company,
+      key,
+      { action: "company.create", input },
+      async (db, s) => {
+        // Recheck ownership under the database lock, including on first creation.
+        const id = (
+          await db.query("SELECT add_legal_company($1,$2,$3) id", [
+            company,
+            input.name,
+            input.date,
+          ])
+        ).rows[0].id;
+        await audit(db, s, "company.added", id, { name: input.name });
+        return { id };
+      },
+    );
   }
   @Get("companies/:company/workspace") workspace(
     @Req() req: Request,

@@ -20,3 +20,9 @@ Independent expected ledger: cash DR 6,600; withholding receivable DR 200; input
 Failures found and fixed: framework dependency incompatibility (selected supported TS 6); ESM build alignment for Nest 12; PostgreSQL row-lock update privilege (minimal column grant with immutable trigger retained); browser locator refinement; absolute screen-reader label causing mobile overflow (contained within positioned scrolling table). Final checks above passed after fixes.
 
 Not verified: official tax/payroll compliance, BIR forms/validators, external integrations, MFA/recovery, full WCAG audit, complete role matrix, source credit-note/payment corrections, migration cutover, S3 security, worker delivery, backup restore, load/performance/SLOs, production hosting and security review. No throughput/scalability or recovery guarantee is claimed. Production dependency audit is not a security certification.
+
+## Company-access increment — 3 November 2026
+
+`npm test`: 20 tests pass, including the new administration scenario. It checks owner-only member visibility, denial of accountant administration, auditor read-only access, accountant posting, self-owner protection, owner promotion, revocation without loss of access to unrelated companies, audit events, same-tenant separation and idempotent concurrent company creation. Existing accounting regression checks continue to pass.
+
+`npm run test:browser`: 2 scenarios pass. New coverage creates a second company through Settings, verifies empty books, switches back, persists selected context across reloads and checks the selector on 390px mobile. The original invoice/bill/withholding/reports/theme scenario still passes. Final API/web builds pass. Remote CI execution remains unverified.

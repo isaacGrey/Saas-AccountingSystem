@@ -2,7 +2,7 @@
 
 Executable truth: db/migrations/*.sql. The architectural domain plan is in architecture.md.
 
-Identity: users hold normalized email and bcrypt hash; sessions are server-side PostgreSQL sessions. Tenants are subscribers; companies are legal books, with PHP and Asia/Manila defaults. Memberships connect a user to an explicit company and role. Branches belong to company scope, never substitute for the legal company. Signup currently creates one company/branch; broader administration remains pending.
+Identity: users hold normalized email and bcrypt hash; sessions are server-side PostgreSQL sessions. Tenants are subscribers; companies are legal books, with PHP and Asia/Manila defaults. Memberships connect a user to an explicit company and role. Branches belong to company scope, never substitute for the legal company. Signup currently creates one company/branch; owner-managed additional companies and registered-user memberships are available; invitations and branch administration remain pending.
 
 Accounting: periods define non-overlapping ranges per company (GiST exclusion); accounts define unique company codes and classifications. Tax rules have an effective start and explicitly unverified development rates. Journals have business dates, immutable posted status and optional unique reversal links. Journal lines have one positive debit or credit and composite company/account/journal references. PostgreSQL enforces at least two balanced lines at posting commit.
 

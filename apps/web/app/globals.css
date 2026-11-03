@@ -1117,3 +1117,27 @@ tfoot {
     display: none;
   }
 }
+.report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+}
+.report-filters label {
+  flex: 1;
+  min-width: 150px;
+}
+.report-filters button {
+  margin-bottom: 17px;
+}
+.report-caption {
+  margin: 20px 0;
+}
+.report-section {
+  margin-top: 24px;
+}
+.period-form {
+  margin: 24px 0;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}

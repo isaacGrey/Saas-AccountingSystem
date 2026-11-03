@@ -1,6 +1,10 @@
 # Implementation status and continuation guide
 
-## Latest increment: company access
+## Latest increment: dated reporting and fiscal periods
+
+Owners can add non-overlapping accounting periods. Reports now provide date-filtered opening/activity/closing trial balances, period income, as-of financial-position summaries, historical AR/AP reconciliation, paginated account activity and audited server-generated CSV exports. See reporting-and-periods.md. Approved reopening, year-end profit transfers and full statutory statements remain pending.
+
+## Previous increment: company access
 
 Implemented owner-only member listing and role grants/changes/revocation for registered users, additive legal-company creation within the same tenant, and an explicit company switcher with persisted selection. Creation copies configuration but no transactions or other memberships. See company-access.md. Email invitations, MFA/recovery, branch administration and granular roles remain pending.
 
@@ -10,7 +14,7 @@ Local development vertical slice, not a complete commercial product. Original fu
 
 Implemented: pinned Next.js/NestJS/TypeScript stack; local PostgreSQL and Redis; maintained password/session libraries; signup creates tenant, company, main branch, current-year period, starter accounts and sample tax treatments; actual restricted-role PostgreSQL RLS; company-scoped composite foreign keys; exact decimal arithmetic; atomic sales invoice/bill posting; cash/withholding settlement; remaining balance and overpayment protection; scoped hashed idempotency keys; manual journals and linked reversals; immutable posted history; close-period lock; transactional audit/outbox; trial balance, income summary, VAT controls, AR/AP reconciliation; trial balance CSV; server-persisted five-preset light/dark/system company themes; desktop/mobile interface; API documentation at /api/docs; PostgreSQL and browser regression tests.
 
-Not complete: milestone 1 compliance discovery and full reference review; milestone 2 fine-grained permissions, MFA, multi-company/branch administration, editable COA and fiscal-period setup, full reporting/theme controls; milestone 3 regulatory tax verification, statutory invoice issuance, credit notes, bank reconciliation, withholding certificates and tax returns. The first connected development workflow is runnable without representing these milestones as fully complete.
+Not complete: milestone 1 compliance discovery and full reference review; milestone 2 fine-grained permissions, MFA, multi-company/branch administration, editable COA and approved period reopening, full reporting/theme controls; milestone 3 regulatory tax verification, statutory invoice issuance, credit notes, bank reconciliation, withholding certificates and tax returns. The first connected development workflow is runnable without representing these milestones as fully complete.
 
 ## Next concrete work (dependency order)
 
@@ -29,4 +33,4 @@ Read README, architecture, posting-rules, test-evidence and this document. Run s
 
 ## Known limitations
 
-Only PHP, one initial branch and calendar fiscal period per new company. Owner/accountant/auditor permissions now have a company-owner administration UI. Server sessions lack MFA/recovery; suitable only for this local milestone. Auth tables are not exposed by APIs. Company settings require write permission. Reports are all-time, not statutory financial statements. Document, journal and audit lists show 100 latest rows; accounting totals and reconciliation cover all rows. Basic two-line manual journal UI; API supports up to 100 lines. Source reversals require a future correction workflow. Close is one-way for now. Outbox has no delivery worker. API OpenAPI request schemas are explicit for documents/payments; auth, journal and settings schemas need fuller OpenAPI descriptions. Themes support company presets/mode; full custom colours, import/export, logos, personal overrides and contrast validation are pending. No performance, restore, accessibility-certification or production-security claims.
+Only PHP, one initial branch and calendar fiscal period per new company. Owner/accountant/auditor permissions now have a company-owner administration UI. Server sessions lack MFA/recovery; suitable only for this local milestone. Auth tables are not exposed by APIs. Company settings require write permission. Reports support explicit dates but are not complete statutory financial statements. Document, journal and audit lists show 100 latest rows; accounting totals and reconciliation cover all rows. Basic two-line manual journal UI; API supports up to 100 lines. Source reversals require a future correction workflow. Close is one-way for now. Outbox has no delivery worker. API OpenAPI request schemas are explicit for documents/payments; auth, journal and settings schemas need fuller OpenAPI descriptions. Themes support company presets/mode; full custom colours, import/export, logos, personal overrides and contrast validation are pending. No performance, restore, accessibility-certification or production-security claims.

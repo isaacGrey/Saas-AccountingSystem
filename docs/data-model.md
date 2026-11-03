@@ -13,3 +13,5 @@ Controls: requests store company-scoped idempotency keys, canonical validated pa
 All financial numbers use fixed-scale NUMERIC and JSON decimal strings. Financial dates are date-only; event times are UTC timestamptz. Identity-generated DEV numbers are not legal invoice series and may have gaps. JSONB is confined to theme, audit/outbox metadata and idempotent response snapshots, not journal amounts or document line accounting.
 
 Full source line items, inventory layers, approvals, payroll, assets, subscription and migration schemas must be added as normalized, scoped entities in future reviewed migrations. Do not infer their existence from the product plan.
+
+Fiscal periods can now be added through an owner-checked database function; runtime direct INSERT permission is revoked. Bounds remain protected by the non-overlap exclusion constraint. Dated report read models derive opening/activity/closing values and as-of subsidiary balances from normalized journals/documents/payments using a single SQL snapshot. Report export events join the existing append-only audit trail.

@@ -63,3 +63,7 @@ npm.cmd run dev
 ```
 
 Keep your existing `.env` and Docker volumes. The new Company access section in Settings supports creating separate companies and managing registered users. Use the header selector to switch companies. See [company access](docs/company-access.md) for permissions and limits.
+
+## Dated reports and additional fiscal periods
+
+Owners can add a fiscal period under Settings without reopening old periods. Reports now offer From/Through dates, opening and closing balances, period income, a basic financial-position summary, historical AR/AP reconciliation and audited CSV export. Select an account in the trial balance for paginated journal activity. See [reporting and fiscal periods](docs/reporting-and-periods.md) for formulas and limitations.

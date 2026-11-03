@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, FormEvent } from "react";
 import Decimal from "decimal.js";
+import { FinancialReports, FiscalPeriodForm } from "./financial-reports";
 import { CompanyAccess } from "./company-access";
 type Row = Record<string, any>;
 const php = (v: string | number) =>
@@ -538,7 +539,21 @@ export default function Home() {
                       </div>
                       <div className="health-row">
                         <span>Fiscal period</span>
-                        <b>{data.periods[0]?.closed ? "Closed" : "Open"}</b>
+                        <b>
+                          {data.periods.find(
+                            (p: Row) =>
+                              p.starts.slice(0, 10) <= day() &&
+                              p.ends.slice(0, 10) >= day(),
+                          )?.closed
+                            ? "Closed"
+                            : data.periods.some(
+                                  (p: Row) =>
+                                    p.starts.slice(0, 10) <= day() &&
+                                    p.ends.slice(0, 10) >= day(),
+                                )
+                              ? "Open"
+                              : "No current period"}
+                        </b>
                       </div>
                       <div className="health-row">
                         <span>Tax configuration</span>
@@ -653,154 +668,11 @@ export default function Home() {
                 </section>
               )}
               {view === "reports" && (
-                <>
-                  <div className="metrics">
-                    {[
-                      [
-                        "Revenue",
-                        new Decimal(balance("4000")).neg().toFixed(2),
-                      ],
-                      ["Expenses", balance("5000")],
-                      ["Net income", profit],
-                      [
-                        "Net VAT control",
-                        new Decimal(balance("2100"))
-                          .neg()
-                          .minus(balance("1200"))
-                          .toFixed(2),
-                      ],
-                    ].map(([label, value]) => (
-                      <div className="metric" key={label}>
-                        <div>{label}</div>
-                        <strong>{php(value)}</strong>
-                        <small>All posted transactions</small>
-                      </div>
-                    ))}
-                  </div>
-                  <section className="panel">
-                    <div className="panel-heading">
-                      <div>
-                        <h2>Trial balance</h2>
-                        <p className="muted">
-                          All posted activity · PHP · Includes no drafts or
-                          forecasts
-                        </p>
-                      </div>
-                      <button
-                        className="secondary"
-                        onClick={() => {
-                          const csv = [
-                            "Code,Account,Debit,Credit",
-                            ...data.trialBalance.map((r: Row) =>
-                              [
-                                r.code,
-                                JSON.stringify(r.name),
-                                r.debit,
-                                r.credit,
-                              ].join(","),
-                            ),
-                          ].join("\n");
-                          const url = URL.createObjectURL(
-                            new Blob([csv], { type: "text/csv" }),
-                          );
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = "development-trial-balance.csv";
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        }}
-                      >
-                        Export CSV ↓
-                      </button>
-                    </div>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Code</th>
-                          <th>Account</th>
-                          <th className="num">Debit activity</th>
-                          <th className="num">Credit activity</th>
-                          <th className="num">Net debit / (credit)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.trialBalance.map((r: Row) => (
-                          <tr key={r.id}>
-                            <td className="mono">{r.code}</td>
-                            <td>{r.name}</td>
-                            <td className="num">{php(r.debit)}</td>
-                            <td className="num">{php(r.credit)}</td>
-                            <td className="num">{php(r.balance)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colSpan={2}>Total</td>
-                          <td className="num">
-                            {php(
-                              data.trialBalance
-                                .reduce(
-                                  (s: Decimal, r: Row) => s.plus(r.debit),
-                                  new Decimal(0),
-                                )
-                                .toFixed(2),
-                            )}
-                          </td>
-                          <td className="num">
-                            {php(
-                              data.trialBalance
-                                .reduce(
-                                  (s: Decimal, r: Row) => s.plus(r.credit),
-                                  new Decimal(0),
-                                )
-                                .toFixed(2),
-                            )}
-                          </td>
-                          <td className="num">
-                            {php(
-                              data.trialBalance
-                                .reduce(
-                                  (s: Decimal, r: Row) => s.plus(r.balance),
-                                  new Decimal(0),
-                                )
-                                .toFixed(2),
-                            )}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </section>
-                  <section className="panel reconciliation">
-                    <h2>Subledger reconciliation</h2>
-                    {["sale", "bill"].map((kind) => {
-                      const subtotal = new Decimal(
-                        data.reconciliation.find((r: Row) => r.kind === kind)
-                          ?.outstanding || "0",
-                      );
-                      return (
-                        <div className="health-row" key={kind}>
-                          <span>
-                            {kind === "sale" ? "Receivables" : "Payables"} · all
-                            posted documents
-                          </span>
-                          <b>
-                            {php(subtotal.toFixed(2))} / GL {php(total(kind))}
-                          </b>
-                          <span>
-                            {subtotal.eq(total(kind))
-                              ? "✓ Reconciled"
-                              : "Review required"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                    <p className="muted">
-                      VAT values are development control balances, not a tax
-                      return or filing calculation.
-                    </p>
-                  </section>
-                </>
+                <FinancialReports
+                  key={company}
+                  company={company}
+                  periods={data.periods}
+                />
               )}
               {view === "accounts" && (
                 <section className="panel">
@@ -945,6 +817,16 @@ export default function Home() {
                   </section>
                   <section className="panel settings">
                     <h2>Company & fiscal period</h2>
+                    {current?.role === "owner" && (
+                      <FiscalPeriodForm
+                        key={company}
+                        company={company}
+                        onSaved={async () => {
+                          await refresh();
+                          setNotice("Fiscal period created.");
+                        }}
+                      />
+                    )}
                     <p>
                       {current.name}
                       <br />

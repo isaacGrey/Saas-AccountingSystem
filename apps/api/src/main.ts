@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {
   Body,
+  Query,
   Catch,
   Controller,
   Get,
@@ -44,6 +45,7 @@ import {
   audit,
   Scope,
 } from "./ledger.js";
+import { financialReport, reportRange, trialCsv } from "./reporting.js";
 import type { PoolClient } from "pg";
 declare module "express-session" {
   interface SessionData {
@@ -68,6 +70,12 @@ class Errors implements ExceptionFilter {
       });
     if (error instanceof HttpException)
       return res.status(error.getStatus()).json({ message: error.message });
+    if (error.code === "23P01")
+      return res
+        .status(409)
+        .json({
+          message: "Fiscal periods cannot overlap, including closed periods",
+        });
     if (error.code === "23505")
       return res.status(409).json({ message: "This record already exists" });
     if (error.code === "42501")
@@ -250,6 +258,102 @@ class AppController {
           ])
         ).rows[0].id;
         await audit(db, s, "company.added", id, { name: input.name });
+        return { id };
+      },
+    );
+  }
+  @Get("companies/:company/reports") report(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Query() query: unknown,
+  ) {
+    const range = reportRange.parse(query);
+    return scoped(user(req), companyId(company), false, (db) =>
+      financialReport(db, range.from, range.to),
+    );
+  }
+  @Post("companies/:company/reports/export") exportReport(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Body() body: unknown,
+  ) {
+    const range = reportRange.parse(body);
+    return scoped(user(req), companyId(company), false, async (db, tenant) => {
+      const report = await financialReport(db, range.from, range.to);
+      await audit(
+        db,
+        { user: user(req), tenant, company },
+        "report.exported",
+        company,
+        { ...range, report: "trial-balance", rows: report.trialBalance.length },
+      );
+      return {
+        filename: `trial-balance-${range.from}-to-${range.to}.csv`,
+        csv: trialCsv(report),
+      };
+    });
+  }
+  @Get("companies/:company/accounts/:account/ledger") accountLedger(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Param("account") account: string,
+    @Query() query: unknown,
+  ) {
+    const input = z
+      .object({
+        from: date,
+        to: date,
+        page: z.coerce.number().int().min(0).max(100000).default(0),
+      })
+      .strict()
+      .refine((v) => v.from <= v.to, { message: "Invalid date range" })
+      .parse(query);
+    companyId(account);
+    return scoped(user(req), companyId(company), false, async (db) => {
+      const a = await db.query(
+        "SELECT id,code,name FROM accounts WHERE id=$1",
+        [account],
+      );
+      if (!a.rowCount) throw new BadRequestException("Account not found");
+      const result = await db.query(
+        `WITH entries AS (SELECT l.id,j.id journal_id,j.number,j.business_date::text,j.memo,l.debit::text,l.credit::text FROM journal_lines l JOIN journals j ON j.id=l.journal_id WHERE l.account_id=$1 AND j.status='posted' AND j.business_date BETWEEN $2::date AND $3::date), page AS (SELECT * FROM entries ORDER BY business_date,number,id LIMIT 50 OFFSET $4) SELECT (SELECT count(*)::int FROM entries) total,coalesce((SELECT jsonb_agg(p ORDER BY p.business_date,p.number,p.id) FROM page p),'[]') entries`,
+        [account, input.from, input.to, input.page * 50],
+      );
+      return { account: a.rows[0], page: input.page, ...result.rows[0] };
+    });
+  }
+  @Post("companies/:company/periods") addPeriod(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Headers("idempotency-key") key: string,
+    @Body() body: unknown,
+  ) {
+    const input = z
+      .object({
+        name: z.string().trim().min(2).max(80),
+        starts: date,
+        ends: date,
+      })
+      .strict()
+      .refine((v) => v.starts <= v.ends, {
+        message: "Period start must precede end",
+      })
+      .parse(body);
+    return this.command(
+      req,
+      company,
+      key,
+      { action: "period.create", input },
+      async (db, s) => {
+        const id = (
+          await db.query("SELECT add_fiscal_period($1,$2,$3,$4) id", [
+            company,
+            input.name,
+            input.starts,
+            input.ends,
+          ])
+        ).rows[0].id;
+        await audit(db, s, "period.created", id, input);
         return { id };
       },
     );

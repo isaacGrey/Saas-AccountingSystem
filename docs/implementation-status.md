@@ -1,6 +1,10 @@
 # Implementation status and continuation guide
 
-## Latest increment: dated reporting and fiscal periods
+## Latest increment: document drafts and independent approvals
+
+Implemented normalized invoice/bill drafts, versioned edits, submission, independent owner approval/rejection, atomic posting from approved contents and owner-configurable required-review policy. Database triggers enforce transitions, content matching and finalization; policy-on direct-posting attempts are blocked. See document-approvals.md. Payment/journal/payroll/order approvals, delegated routing, thresholds and legal issuance remain pending.
+
+## Previous increment: dated reporting and fiscal periods
 
 Owners can add non-overlapping accounting periods. Reports now provide date-filtered opening/activity/closing trial balances, period income, as-of financial-position summaries, historical AR/AP reconciliation, paginated account activity and audited server-generated CSV exports. See reporting-and-periods.md. Approved reopening, year-end profit transfers and full statutory statements remain pending.
 
@@ -20,7 +24,7 @@ Not complete: milestone 1 compliance discovery and full reference review; milest
 
 1. Obtain the authorized reference PDF and access to current BIR/NPC/SSS/PhilHealth/Pag-IBIG/DOLE official sources; verify effective dates and preserve source evidence. Have a Philippine accountant approve applicability and fixtures before any live tax behavior.
 2. Add invitation/membership administration, explicit multiple-company/branch selection, least-privilege roles, MFA, recovery, user/session revocation, transactional approval policies and personal preferences. Keep full isolation tests.
-3. Build versioned verified tax profiles, invoice drafts/approval/issuance, legally correct credit notes, payment corrections and certificate reconciliation. Replace only sample rules with approved effective-dated rules, retaining historical snapshots.
+3. Build versioned verified tax profiles, versioned statutory invoice issuance and broader approval routing, legally correct credit notes, payment corrections and certificate reconciliation. Replace only sample rules with approved effective-dated rules, retaining historical snapshots.
 4. Add editable COA, fiscal calendars and approved reopening; as-of/date-range reports, financial position/cash flows/equity statements and drilldown; paginate rather than just cap lists.
 5. Private S3-compatible attachments, upload validation/scanning, scoped expiring access; worker delivery/retry/dead letters from PostgreSQL outbox. Redis is provisioned but intentionally unused until a real job implementation exists.
 6. Orders/receipts/shipment/three-way match and approvals; inventory valuation; assets/projects/budgets/CRM. Follow the complete mapping, not only this summary.

@@ -9,3 +9,5 @@ Sale (sample VAT): DR AR gross; CR revenue net; CR output VAT. Bill: DR expense 
 Trial balance and financial summaries include posted entries only. AR/AP reports reconcile gross less settled amounts to ledger control accounts. General cash flow statement, changes in equity, FX, non-deductible tax, mixed VAT and detailed statutory schedules remain pending.
 
 Reporting dates do not change posting dates or closed-period rules. A new period cannot overlap any prior period, including a closed one; adding a new year does not reopen old dates or automatically transfer profit. Report opening balances derive from all earlier posted activity, avoiding duplicate opening entries.
+
+When company approval_required is true, invoices/bills must reference an independently approved draft. PostgreSQL verifies the source matches the approved fields and that the draft finalizes as posted in the same transaction. Drafts never affect reports. Editing an approved draft resets it to draft and invalidates review. Source credit-note/payment correction remains separate and unavailable.

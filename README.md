@@ -67,3 +67,7 @@ Keep your existing `.env` and Docker volumes. The new Company access section in 
 ## Dated reports and additional fiscal periods
 
 Owners can add a fiscal period under Settings without reopening old periods. Reports now offer From/Through dates, opening and closing balances, period income, a basic financial-position summary, historical AR/AP reconciliation and audited CSV export. Select an account in the trial balance for paginated journal activity. See [reporting and fiscal periods](docs/reporting-and-periods.md) for formulas and limitations.
+
+## Document drafts and approval controls
+
+Drafts & approvals now supports invoice/bill preparation, submission, independent owner review, rejection/revision and atomic posting. Owners can require this workflow under Settings after adding a second company owner. Existing companies retain direct posting until that policy is enabled. See [approval workflow and two-user test instructions](docs/document-approvals.md). Run migrations 005–006 when updating; keep existing credentials and data volumes.

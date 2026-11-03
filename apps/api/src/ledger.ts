@@ -143,7 +143,14 @@ export async function createDocument(
   db: PoolClient,
   s: Scope,
   input: z.infer<typeof documentInput>,
+  draftId?: string,
 ) {
+  const policy = await db.query(
+    "SELECT approval_required FROM companies WHERE id=$1 FOR SHARE",
+    [s.company],
+  );
+  if (policy.rows[0]?.approval_required && !draftId)
+    throw new ConflictException("This company requires an approved draft");
   const rule = await db.query(
     "SELECT rate FROM tax_rules WHERE code=$1 AND effective_from<=$2",
     [input.taxCode, input.date],
@@ -189,7 +196,7 @@ export async function createDocument(
     ],
   );
   const result = await db.query(
-    "INSERT INTO documents(id,tenant_id,company_id,kind,party_id,party_name,description,business_date,net,tax,gross,tax_code,tax_rate,journal_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *",
+    "INSERT INTO documents(id,tenant_id,company_id,kind,party_id,party_name,description,business_date,net,tax,gross,tax_code,tax_rate,journal_id,draft_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *",
     [
       id,
       s.tenant,
@@ -205,6 +212,7 @@ export async function createDocument(
       input.taxCode,
       rule.rows[0].rate,
       journal.id,
+      draftId || null,
     ],
   );
   await audit(db, s, `${input.kind}.posted`, id, { journalId: journal.id });

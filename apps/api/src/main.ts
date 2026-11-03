@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { revision, saveDraft, transitionDraft } from "./approvals.js";
 import {
   Body,
   Query,
@@ -71,11 +72,9 @@ class Errors implements ExceptionFilter {
     if (error instanceof HttpException)
       return res.status(error.getStatus()).json({ message: error.message });
     if (error.code === "23P01")
-      return res
-        .status(409)
-        .json({
-          message: "Fiscal periods cannot overlap, including closed periods",
-        });
+      return res.status(409).json({
+        message: "Fiscal periods cannot overlap, including closed periods",
+      });
     if (error.code === "23505")
       return res.status(409).json({ message: "This record already exists" });
     if (error.code === "42501")
@@ -357,6 +356,109 @@ class AppController {
         return { id };
       },
     );
+  }
+  @Get("companies/:company/drafts") drafts(
+    @Req() req: Request,
+    @Param("company") company: string,
+  ) {
+    return scoped(
+      user(req),
+      companyId(company),
+      false,
+      async (db) =>
+        (
+          await db.query(
+            "SELECT d.*,u.name author_name,r.name reviewer_name,doc.id document_id FROM document_drafts d JOIN users u ON u.id=d.created_by LEFT JOIN users r ON r.id=d.reviewed_by LEFT JOIN documents doc ON doc.draft_id=d.id ORDER BY d.updated_at DESC,d.id LIMIT 100",
+          )
+        ).rows,
+    );
+  }
+  @Post("companies/:company/drafts") newDraft(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Headers("idempotency-key") key: string,
+    @Body() body: unknown,
+  ) {
+    const input = documentInput.parse(body);
+    return this.command(
+      req,
+      company,
+      key,
+      { action: "draft.create", input },
+      (db, s) => saveDraft(db, s, input),
+    );
+  }
+  @Post("companies/:company/drafts/:id/revise") reviseDraft(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Param("id") id: string,
+    @Headers("idempotency-key") key: string,
+    @Body() body: unknown,
+  ) {
+    companyId(id);
+    const input = z
+      .object({ version: revision, document: documentInput })
+      .strict()
+      .parse(body);
+    return this.command(
+      req,
+      company,
+      key,
+      { action: "draft.revise", id, input },
+      (db, s) => saveDraft(db, s, input.document, id, input.version),
+    );
+  }
+  @Post("companies/:company/drafts/:id/action") draftAction(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Param("id") id: string,
+    @Headers("idempotency-key") key: string,
+    @Body() body: unknown,
+  ) {
+    companyId(id);
+    const input = z
+      .object({
+        version: revision,
+        action: z.enum(["submit", "approve", "reject", "post"]),
+        reason: z.string().trim().min(5).max(500).optional(),
+      })
+      .strict()
+      .parse(body);
+    return this.command(
+      req,
+      company,
+      key,
+      { action: "draft.action", id, input },
+      (db, s) =>
+        transitionDraft(db, s, id, input.version, input.action, input.reason),
+    );
+  }
+  @Post("companies/:company/approval-policy") approvalPolicy(
+    @Req() req: Request,
+    @Param("company") company: string,
+    @Body() body: unknown,
+  ) {
+    const input = z
+      .object({
+        required: z.boolean(),
+        reason: z.string().trim().min(5).max(500),
+      })
+      .strict()
+      .parse(body);
+    return scoped(user(req), companyId(company), true, async (db, tenant) => {
+      await db.query("SELECT set_approval_policy($1,$2)", [
+        company,
+        input.required,
+      ]);
+      await audit(
+        db,
+        { user: user(req), tenant, company },
+        "approval.policy_changed",
+        company,
+        input,
+      );
+      return input;
+    });
   }
   @Get("companies/:company/workspace") workspace(
     @Req() req: Request,

@@ -2,6 +2,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import Decimal from "decimal.js";
 import { FinancialReports, FiscalPeriodForm } from "./financial-reports";
+import { DocumentApprovals, ApprovalPolicy } from "./document-approvals";
 import { CompanyAccess } from "./company-access";
 type Row = Record<string, any>;
 const php = (v: string | number) =>
@@ -37,6 +38,7 @@ const nav = [
   ["overview", "◈", "Overview"],
   ["sale", "→", "Sales & collections"],
   ["bill", "←", "Bills & payments"],
+  ["drafts", "✓", "Drafts & approvals"],
   ["journals", "≡", "General ledger"],
   ["reports", "▥", "Reports"],
   ["accounts", "⌘", "Chart of accounts"],
@@ -164,7 +166,7 @@ export default function Home() {
     const form = Object.fromEntries(new FormData(e.currentTarget));
     await action(async () => {
       await api(
-        `companies/${company}/documents`,
+        `companies/${company}/${current?.approval_required ? "drafts" : "documents"}`,
         "POST",
         { ...form, kind: modal, net, taxCode: tax },
         requestKey,
@@ -172,7 +174,9 @@ export default function Home() {
       await refresh();
       setModal(null);
       setNotice(
-        "Document posted. The journal and outstanding balance are updated.",
+        current?.approval_required
+          ? "Draft saved. Open Drafts & approvals to submit it."
+          : "Document posted. The journal and outstanding balance are updated.",
       );
     });
   }
@@ -455,6 +459,15 @@ export default function Home() {
             <p>Loading company records…</p>
           ) : (
             <>
+              {view === "drafts" && (
+                <DocumentApprovals
+                  key={company}
+                  company={company}
+                  userId={me.user.id}
+                  role={current.role}
+                  onPosted={() => refresh()}
+                />
+              )}
               {view === "overview" && (
                 <>
                   <div className="metrics">
@@ -739,6 +752,14 @@ export default function Home() {
               {view === "settings" && (
                 <div className="settings-grid">
                   {current?.role === "owner" && (
+                    <ApprovalPolicy
+                      key={company + String(current.approval_required)}
+                      company={company}
+                      required={current.approval_required}
+                      onSaved={() => refresh()}
+                    />
+                  )}
+                  {current?.role === "owner" && (
                     <CompanyAccess
                       key={company}
                       company={company}
@@ -1015,7 +1036,11 @@ export default function Home() {
                   </p>
                 </div>
                 <button className="primary" disabled={busy}>
-                  {busy ? "Posting…" : "Post document & journal"}
+                  {busy
+                    ? "Saving…"
+                    : current?.approval_required
+                      ? "Save draft for approval"
+                      : "Post document & journal"}
                 </button>
               </form>
             )}
